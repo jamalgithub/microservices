@@ -13,6 +13,7 @@ services:
     networks:
       - postgres
     restart: unless-stopped
+
   pgadmin:
     container_name: pgadmin
     image: dpage/pgadmin4:6.18
@@ -28,8 +29,58 @@ services:
       - postgres
     restart: unless-stopped
 
+  storage:
+    image: openzipkin/zipkin-mysql:2.22
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - spring
+
+  zipkin:
+    image: openzipkin/zipkin:2.24
+    container_name: zipkin
+    environment:
+      - STORAGE_TYPE=mysql
+      # Point the zipkin at the storage backend
+      - MYSQL_HOST=storage
+      # - SELF_TRACING_ENABLED=true
+      # - JAVA_OPTS=-Dlogging.level.zipkin2=DEBUG
+      # Add the baked-in username and password for the zipkin-mysql image
+      - MYSQL_USER=zipkin
+      - MYSQL_PASS=zipkin
+    ports:
+      - "9411:9411"
+    depends_on:
+      - storage
+    networks:
+      - spring
+
+  dependencies:
+    image: openzipkin/zipkin-dependencies:2.6
+    container_name: dependencies
+    entrypoint: crond -f
+    environment:
+      - STORAGE_TYPE=mysql
+      - MYSQL_HOST=storage
+      # Add the baked-in username and password for the zipkin-mysql image
+      - MYSQL_USER=zipkin
+      - MYSQL_PASS=zipkin
+      - MYSQL_DB=zipkin
+      # Uncomment to see dependency processing logs
+      # - ZIPKIN_LOG_LEVEL=DEBUG
+      # Adjust memory used by the dependencies job
+      - JAVA_OPTS=-verbose:gc -Xms512m -Xmx512m
+    depends_on:
+      - storage
+    networks:
+      - spring
+    restart: unless-stopped
+
 networks:
   postgres:
+    driver: bridge
+  spring:
     driver: bridge
 
 volumes:
