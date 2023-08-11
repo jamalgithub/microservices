@@ -13,6 +13,11 @@ spring:
           uri: lb://CUSTOMER
           predicates:
             - Path=/api/v1/customers/**
+            - Header=X-Org-Id, [A-Z0-9]+
+            - Header=X-Portal, client-portal
+          filters:
+            - CustomPreFilter
+            - CustomPostFilter
 
 eureka:
   client:
