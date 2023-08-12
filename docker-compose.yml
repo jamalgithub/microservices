@@ -110,6 +110,22 @@ services:
       - spring
     restart: unless-stopped
 
+  rabbitmq:
+    image: rabbitmq:3.9.11-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: jamal
+      RABBITMQ_DEFAULT_PASS: jamal
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    ports:
+      # port to be used by producers and consumers to connect to rabbitmq
+      - "5672:5672"
+      # management port of rabbitmq
+      - "15672:15672"
+    networks:
+      - spring
+
 networks:
   postgres:
     driver: bridge
@@ -121,3 +137,4 @@ volumes:
   postgres-data-fraud:
   postgres-data-notification:
   pgadmin-data:
+  rabbitmq-data:
